@@ -31,7 +31,7 @@ using var connection = await factory.CreateConnectionAsync();
 using var channel = await connection.CreateChannelAsync();
 
 await channel.QueueDeclareAsync(queue: "requests", durable: false, exclusive: false, autoDelete: false);
-await channel.QueueDeclareAsync(queue: "responses", durable: false, exclusive: false, autoDelete: false);
+var cbQueue = (await channel.QueueDeclareAsync("", durable: false, exclusive: false, autoDelete: false)).QueueName;
 
 var consumer = new AsyncEventingBasicConsumer(channel);
 consumer.ReceivedAsync += (model, ea) =>
@@ -47,7 +47,7 @@ consumer.ReceivedAsync += (model, ea) =>
     return Task.CompletedTask;
 };
 
-await channel.BasicConsumeAsync("responses", autoAck: true, consumer: consumer);
+await channel.BasicConsumeAsync(cbQueue, autoAck: true, consumer: consumer);
 
 var app = builder.Build();
 
@@ -67,7 +67,8 @@ app.MapGet(
             RequestId: requestId,
             Size: size,
             Quality: quality,
-            Seed: seed
+            Seed: seed,
+            ReplyTo: cbQueue
         );
 
         Console.WriteLine($" [*] Creating request {request.RequestId}!");
@@ -104,7 +105,8 @@ app.MapGet(
             RequestId: requestId,
             Size: 0,
             Quality: 0,
-            Seed: -2
+            Seed: -2,
+            ReplyTo : cbQueue
         );
 
         Console.WriteLine($" [*] Creating request {request.RequestId}!");

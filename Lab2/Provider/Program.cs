@@ -23,7 +23,6 @@ using var connection = await factory.CreateConnectionAsync();
 using var channel = await connection.CreateChannelAsync();
 
 await channel.QueueDeclareAsync(queue: "requests", durable: false, exclusive: false, autoDelete: false);
-await channel.QueueDeclareAsync(queue: "responses", durable: false, exclusive: false, autoDelete: false);
 
 var consumer = new AsyncEventingBasicConsumer(channel);
 consumer.ReceivedAsync += async (model, ea) =>
@@ -32,7 +31,7 @@ consumer.ReceivedAsync += async (model, ea) =>
 
     var request = JsonSerializer.Deserialize<GenerationRequest>(Encoding.UTF8.GetString(body));
 
-    var (id, size, quality, seed) = request!;
+    var (id, size, quality, seed, replyTo) = request!;
 
     Console.WriteLine($" [*] Received request {id}!");
 
@@ -55,7 +54,7 @@ consumer.ReceivedAsync += async (model, ea) =>
 
     sw.Stop();
 
-    await channel.BasicPublishAsync(exchange: string.Empty, routingKey: "responses", body: JsonSerializer.SerializeToUtf8Bytes(response));
+    await channel.BasicPublishAsync(exchange: string.Empty, routingKey: replyTo, body: JsonSerializer.SerializeToUtf8Bytes(response));
 
     Console.WriteLine($" [*] Calculations time: {sw.ElapsedMilliseconds} ms.");
 
