@@ -1,4 +1,3 @@
-using Models;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text.Json;
@@ -62,7 +61,7 @@ app.MapGet(
     "/generateFractal",
     async (int? size, int? quality, int? seed, byte priority = 0) => {
 
-        int requestId = random.Next();
+        Guid requestId = Guid.NewGuid();
 
         var request = new GenerationRequest(
             RequestId: requestId,
@@ -99,7 +98,7 @@ app.MapGet(
     "/timeTest",
     async (int time = 0) => {
 
-        int requestId = random.Next();
+        Guid requestId = Guid.NewGuid();
 
         var request = new GenerationRequest(
             RequestId: requestId,

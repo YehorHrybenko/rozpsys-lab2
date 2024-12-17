@@ -3,20 +3,20 @@ namespace Consumer.Services;
 
 internal class ResponseHandler
 {
-    public Dictionary<int, Action<string>> listeners = [];
+    public Dictionary<Guid, Action<string>> listeners = [];
 
-    public void AddResponse(int id, string result)
+    public void AddResponse(Guid id, string result)
     {
         listeners[id].Invoke(result);
         listeners.Remove(id);
     }
 
-    public void Subscribe(int id, Action<string> action)
+    public void Subscribe(Guid id, Action<string> action)
     {
         listeners.Add(id, action);
     }
 
-    public Task<string> PromiseRetrieve(int id)
+    public Task<string> PromiseRetrieve(Guid id)
     {
         var promise = new TaskCompletionSource<string>();
 
