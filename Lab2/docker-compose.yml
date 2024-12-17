@@ -1,0 +1,34 @@
+services:
+  consumer:
+    image: ${DOCKER_REGISTRY-}consumer
+    build:
+      context: .
+      dockerfile: Consumer/Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    depends_on:
+        - "rabbitmq"
+
+  provider:
+    image: ${DOCKER_REGISTRY-}provider
+    build:
+      context: .
+      dockerfile: Provider/Dockerfile
+    environment:
+        - "RMQ_HOST=rabbitmq"
+        - "RMQ_PORT=5672"
+        - "RMQ_USERNAME=rabbitmquser"
+        - "RMQ_PASSWORD=rabbitmqpassword"
+    depends_on:
+        - "rabbitmq"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmquser
+      RABBITMQ_DEFAULT_PASS: rabbitmqpassword
+
