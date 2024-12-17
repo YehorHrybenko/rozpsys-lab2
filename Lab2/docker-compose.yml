@@ -1,16 +1,51 @@
 services:
-  consumer:
-    image: ${DOCKER_REGISTRY-}consumer
-    build:
-      context: .
-      dockerfile: Consumer/Dockerfile
+  consumer-lb:
+    image: nginx:latest
+    container_name: consumer-lb
+    volumes:
+      - ./Consumer/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "8080:8080"
       - "8081:8081"
     depends_on:
+      - "consumer-1"
+
+  consumer-1:
+    container_name: consumer-1
+    image: ${DOCKER_REGISTRY-}consumer
+    build:
+      context: .
+      dockerfile: Consumer/Dockerfile
+    depends_on:
         - "rabbitmq"
 
   provider:
+    image: ${DOCKER_REGISTRY-}provider
+    build:
+      context: .
+      dockerfile: Provider/Dockerfile
+    environment:
+        - "RMQ_HOST=rabbitmq"
+        - "RMQ_PORT=5672"
+        - "RMQ_USERNAME=rabbitmquser"
+        - "RMQ_PASSWORD=rabbitmqpassword"
+    depends_on:
+        - "rabbitmq"
+
+  provider-2:
+    image: ${DOCKER_REGISTRY-}provider
+    build:
+      context: .
+      dockerfile: Provider/Dockerfile
+    environment:
+        - "RMQ_HOST=rabbitmq"
+        - "RMQ_PORT=5672"
+        - "RMQ_USERNAME=rabbitmquser"
+        - "RMQ_PASSWORD=rabbitmqpassword"
+    depends_on:
+        - "rabbitmq"
+
+  provider-3:
     image: ${DOCKER_REGISTRY-}provider
     build:
       context: .

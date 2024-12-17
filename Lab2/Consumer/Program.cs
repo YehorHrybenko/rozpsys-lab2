@@ -6,6 +6,7 @@ using static Models.GenerationModel;
 
 using Consumer.Services;
 using System.Text;
+using System.Diagnostics;
 
 var random = new Random();
 
@@ -40,9 +41,10 @@ consumer.ReceivedAsync += (model, ea) =>
 
     var (id, result) = JsonSerializer.Deserialize<GenerationResponse>(body)!;
 
+    Console.WriteLine($" [x] Received response {id}!");
+
     responseHandler.AddResponse(id, result);
-    
-    Console.WriteLine($" [x] Received response for {id}!");
+
     return Task.CompletedTask;
 };
 
@@ -69,7 +71,11 @@ app.MapGet(
             Seed: seed
         );
 
-        Task<string> result = responseHandler.PromiseRetrieve(requestId);
+        Console.WriteLine($" [*] Creating request {request.RequestId}!");
+
+        Stopwatch sw = Stopwatch.StartNew();
+
+        Task<string> response = responseHandler.PromiseRetrieve(requestId);
 
         await channel.BasicPublishAsync(
             exchange: string.Empty, 
@@ -79,9 +85,13 @@ app.MapGet(
             body: Encoding.UTF8.GetBytes(JsonSerializer.Serialize(request))
         );
 
-        Console.WriteLine($" [*] Created request {request.RequestId}! \n Request: {JsonSerializer.Serialize(request)}");
+        var res = await response;
+        
+        sw.Stop();
 
-        return await result;
+        Console.WriteLine($" [i] Request took {sw.ElapsedMilliseconds} ms.");
+
+        return res;
     }
 );
 

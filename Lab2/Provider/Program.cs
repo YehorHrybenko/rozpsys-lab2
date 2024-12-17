@@ -1,6 +1,7 @@
 ﻿
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using static Models.GenerationModel;
@@ -33,18 +34,23 @@ consumer.ReceivedAsync += async (model, ea) =>
 
     var (id, size, quality, seed) = request!;
 
-    Console.WriteLine($" [*] Received request! {id} \n Request: {Encoding.UTF8.GetString(body)}");
+    Console.WriteLine($" [*] Received request {id}!");
+
+    Stopwatch sw = Stopwatch.StartNew();
 
     var response = new GenerationResponse(
         Id: id,
         Result: JuliaFractal.GenerateFractal(size ?? 256, quality ?? 80, seed ?? random.Next())
     );
 
+    sw.Stop();
+
+    Console.WriteLine($" [*] Calculations time: {sw.ElapsedMilliseconds} ms.");
+
     await channel.BasicPublishAsync(exchange: string.Empty, routingKey: "responses", body: JsonSerializer.SerializeToUtf8Bytes(response));
-    Console.WriteLine($" [x] Sent response! {id}");
+    Console.WriteLine($" [x] Sent response {id}!");
 };
 
 await channel.BasicConsumeAsync("requests", autoAck: true, consumer: consumer);
 
-Console.WriteLine(" Press [enter] to exit.");
 Console.ReadLine();
