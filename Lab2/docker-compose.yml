@@ -19,6 +19,15 @@ services:
     depends_on:
         - "rabbitmq"
 
+  consumer-2:
+    container_name: consumer-2
+    image: ${DOCKER_REGISTRY-}consumer
+    build:
+      context: .
+      dockerfile: Consumer/Dockerfile
+    depends_on:
+        - "rabbitmq"
+
   provider:
     image: ${DOCKER_REGISTRY-}provider
     build:
