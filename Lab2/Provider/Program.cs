@@ -38,18 +38,31 @@ consumer.ReceivedAsync += async (model, ea) =>
 
     Stopwatch sw = Stopwatch.StartNew();
 
+    string fractal = "";
+
+    if (!CheckIfTimeTest(request))
+    {
+        fractal = JuliaFractal.GenerateFractal(size ?? 256, quality ?? 80, seed ?? random.Next());
+    }
+
+    sw.Stop();
+
     var response = new GenerationResponse(
         Id: id,
-        Result: JuliaFractal.GenerateFractal(size ?? 256, quality ?? 80, seed ?? random.Next())
+        Result: fractal
+
     );
 
     sw.Stop();
 
+    await channel.BasicPublishAsync(exchange: string.Empty, routingKey: "responses", body: JsonSerializer.SerializeToUtf8Bytes(response));
+
     Console.WriteLine($" [*] Calculations time: {sw.ElapsedMilliseconds} ms.");
 
-    await channel.BasicPublishAsync(exchange: string.Empty, routingKey: "responses", body: JsonSerializer.SerializeToUtf8Bytes(response));
     Console.WriteLine($" [x] Sent response {id}!");
 };
+
+static bool CheckIfTimeTest(GenerationRequest request) => request.Seed == -2;
 
 await channel.BasicConsumeAsync("requests", autoAck: true, consumer: consumer);
 

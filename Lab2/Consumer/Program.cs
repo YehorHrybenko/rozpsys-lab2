@@ -95,6 +95,43 @@ app.MapGet(
     }
 );
 
+app.MapGet(
+    "/timeTest",
+    async (int time = 0) => {
+
+        int requestId = random.Next();
+
+        var request = new GenerationRequest(
+            RequestId: requestId,
+            Size: 0,
+            Quality: 0,
+            Seed: -2
+        );
+
+        Console.WriteLine($" [*] Creating request {request.RequestId}!");
+
+        Stopwatch sw = Stopwatch.StartNew();
+
+        Task<string> response = responseHandler.PromiseRetrieve(requestId);
+
+        await channel.BasicPublishAsync(
+            exchange: string.Empty,
+            routingKey: "requests",
+            mandatory: true,
+            basicProperties: new BasicProperties() { Priority = 9 },
+            body: Encoding.UTF8.GetBytes(JsonSerializer.Serialize(request))
+        );
+
+        var res = await response;
+
+        sw.Stop();
+
+        Console.WriteLine($" [i] Request took {sw.ElapsedMilliseconds} ms.");
+
+        return res;
+    }
+);
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
